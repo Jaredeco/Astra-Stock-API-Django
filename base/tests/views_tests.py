@@ -13,10 +13,10 @@ class ViewsTest(TestCase):
         # Create a user for testing
         self.user = User.objects.create_user(username='testuser', password='testpassword')
 
-        # Create a admin user for testing
+        # Create an admin user for testing
         self.admin_user = User.objects.create_user(username='adminuser', password='adminpassword', is_staff=True)
 
-        # Create a user for testing
+        # Create a dummy user for testing
         User.objects.create_user(username='testuser2', password='testpassword')
 
         # Create a bond for testing

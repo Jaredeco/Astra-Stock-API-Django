@@ -19,7 +19,9 @@ The API has the following endpoints:
   - `GET /users/`: Retrieve a list of all users. (Admin privileges required)
 
 - **Portfolio Analysis Endpoint:**
-  - `GET /portfolio/analyze/`: Analyze the investment portfolio of the authenticated user. (User authentication required)
+  - `GET /portfolio/`: Analyze the investment portfolio of the authenticated user. (User authentication required)
+  - `GET /portfolio/bonds/`: Retrieve a list of all bonds in portfolio of the authenticated user. (User authentication required)
+  - `GET /portfolio/investments/`: Retrieve a list of all investments in portfolio of the authenticated user. (User authentication required)
 
 - **Investments Endpoints:**
   - `POST /investment/`: Purchase a bond by providing the username, bond ISIN, and volume. (User authentication required)

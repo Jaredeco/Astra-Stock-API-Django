@@ -10,13 +10,16 @@ from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from django.db.models import Avg
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema
 
 
+@extend_schema(description="Retrieve a list of all bonds. (No authentication required)")
 class BondListView(ListAPIView):
     queryset = Bond.objects.all()
     serializer_class = BondSerializer
 
 
+@extend_schema(description="Bond detail. (Admin privileges required)")
 class BondCRUDView(RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAdminUser,)
     queryset = Bond.objects.all()
@@ -24,18 +27,21 @@ class BondCRUDView(RetrieveUpdateDestroyAPIView):
     lookup_field = 'isin'
 
 
+@extend_schema(description="Create a new bond. (Admin privileges required)")
 class BondCreateView(CreateAPIView):
     permission_classes = (IsAdminUser,)
     queryset = Bond.objects.all()
     serializer_class = BondSerializer
 
 
+@extend_schema(description="Retrieve a list of all users. (Admin privileges required)")
 class UsersListView(ListAPIView):
     permission_classes = (IsAdminUser,)
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
 
+@extend_schema(description="Analyze the investment portfolio of the authenticated user. (User authentication required)")
 class AnalyzePortfolioView(APIView):
     permission_classes = (IsAuthenticated,)
 
@@ -69,6 +75,8 @@ class AnalyzePortfolioView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
+@extend_schema(description="Purchase a bond by providing the username, bond ISIN, and volume. (User authentication "
+                           "required)")
 class PurchaseBondView(APIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = InvestmentSerializer
@@ -105,6 +113,7 @@ class PurchaseBondView(APIView):
         return Response(serializer.errors, status=400)
 
 
+@extend_schema(description="Investment details (User Authentication required)")
 class InvestmentCRUDView(RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = InvestmentSerializer
@@ -114,6 +123,8 @@ class InvestmentCRUDView(RetrieveUpdateDestroyAPIView):
         return Investment.objects.filter(username=self.request.user.username)
 
 
+@extend_schema(description="Retrieve a list of all bonds in portfolio of the authenticated user. (User authentication "
+                           "required)")
 class UserPortfolioBondListView(ListAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = BondSerializer
@@ -123,6 +134,8 @@ class UserPortfolioBondListView(ListAPIView):
         return Bond.objects.filter(isin__in=investment_query_set.values('bond_isin'))
 
 
+@extend_schema(description="Retrieve a list of all investments in portfolio of the authenticated user. (User "
+                           "authentication required)")
 class UserPortfolioInvestmentListView(ListAPIView):
     permission_classes = (IsAuthenticated,)
     queryset = Bond.objects.all()
@@ -132,6 +145,7 @@ class UserPortfolioInvestmentListView(ListAPIView):
         return Investment.objects.filter(username=self.request.user.username)
 
 
+@extend_schema(description="Register the user if no account exists or authenticate if the user already exists.")
 class AuthenticationView(APIView):
     serializer_class = UserSerializer
 

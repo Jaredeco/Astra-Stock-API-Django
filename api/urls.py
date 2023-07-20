@@ -8,9 +8,9 @@ urlpatterns = [
     path('bond/', BondCreateView.as_view(), name='create-bond'),
     path('bond/<str:isin>/', BondCRUDView.as_view(), name='bond-detail'),
     path('portfolio/', AnalyzePortfolioView.as_view(), name='analyze-portfolio'),
-    path('portfolio/investments/', UserPortfolioInvestmentListView.as_view(), name='user portfolio '
+    path('portfolio/investments/', UserPortfolioInvestmentListView.as_view(), name='user-portfolio-'
                                                                                    'investments'),
-    path('portfolio/bonds/', UserPortfolioBondListView.as_view(), name='user portfolio bonds'),
+    path('portfolio/bonds/', UserPortfolioBondListView.as_view(), name='user-portfolio-bonds'),
     path('investment/', PurchaseBondView.as_view(), name='purchase-bond'),
     path('investment/<int:id>', InvestmentCRUDView.as_view(), name='investment-detail'),
 ]
