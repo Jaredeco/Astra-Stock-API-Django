@@ -52,7 +52,6 @@ class BondModelTest(TestCase):
         mock_get.return_value.json.return_value = {
             'isin': 'CZ0003551251',
             'name': 'Some Bond Name',
-            # Add other properties as needed for your tests
         }
 
         # Create a Bond object with a valid ISIN
