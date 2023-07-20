@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from base.models import Bond, Investment
+from unittest.mock import patch
+from django.core.exceptions import ValidationError
 
 
 class BondModelTest(TestCase):
@@ -42,6 +44,41 @@ class BondModelTest(TestCase):
 
         # Check the string representation of the Bond
         self.assertEqual(str(bond), 'Test Bond (TEST12345678)')
+
+    @patch('requests.get')
+    def test_validate_isin(self, mock_get):
+        # Test with a valid ISIN
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = {
+            'isin': 'CZ0003551251',
+            'name': 'Some Bond Name',
+            # Add other properties as needed for your tests
+        }
+
+        # Create a Bond object with a valid ISIN
+        valid_bond = Bond(isin='CZ0003551251', name='Valid Bond', value=1000,
+                          interest_rate='0.05',
+                          purchase_date='2023-01-01',
+                          expiration_date='2024-01-01',
+                          interest_payment_frequency='Annual',)
+        valid_bond.full_clean()  # This should not raise a ValidationError
+
+        # Test with an invalid ISIN
+        mock_get.return_value.status_code = 404
+        mock_get.return_value.json.return_value = {
+            'message': 'Invalid ISIN',
+        }
+
+        # Create a Bond object with an invalid ISIN
+        invalid_bond = Bond(isin='INVALIDISIN', name='Invalid Bond', value=1000,
+                            interest_rate=0.05,
+                            purchase_date='2023-01-01',
+                            expiration_date='2024-01-01',
+                            interest_payment_frequency='Annual',)
+        with self.assertRaises(ValidationError) as context:
+            invalid_bond.full_clean()
+
+        self.assertEqual(context.exception.message_dict['isin'][0], 'Invalid ISIN')
 
 
 class InvestmentModelTest(TestCase):

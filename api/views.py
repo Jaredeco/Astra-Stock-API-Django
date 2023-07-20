@@ -13,35 +13,34 @@ from django.utils import timezone
 
 
 class BondListView(ListAPIView):
-    permission_classes = (IsAuthenticated,)
     queryset = Bond.objects.all()
     serializer_class = BondSerializer
 
 
 class BondCRUDView(RetrieveUpdateDestroyAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAdminUser,)
     queryset = Bond.objects.all()
     serializer_class = BondSerializer
     lookup_field = 'isin'
 
 
 class BondCreateView(CreateAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAdminUser,)
     queryset = Bond.objects.all()
     serializer_class = BondSerializer
 
 
 class UsersListView(ListAPIView):
+    permission_classes = (IsAdminUser,)
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsAdminUser,)
 
 
 class AnalyzePortfolioView(APIView):
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request, username):
-        investments = Investment.objects.filter(username=username)
+    def get(self, request):
+        investments = Investment.objects.filter(username=request.user.username)
         if len(investments) == 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
         average_interest_rate = investments.aggregate(avg=Avg('bond_isin__interest_rate'))['avg']
@@ -106,12 +105,21 @@ class PurchaseBondView(APIView):
         return Response(serializer.errors, status=400)
 
 
+class InvestmentCRUDView(RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = InvestmentSerializer
+    lookup_field = 'id'
+
+    def get_queryset(self):
+        return Investment.objects.filter(username=self.request.user.username)
+
+
 class UserPortfolioBondListView(ListAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = BondSerializer
 
     def get_queryset(self):
-        investment_query_set = Investment.objects.filter(username=self.kwargs['username'])
+        investment_query_set = Investment.objects.filter(username=self.request.user.username)
         return Bond.objects.filter(isin__in=investment_query_set.values('bond_isin'))
 
 
@@ -121,7 +129,7 @@ class UserPortfolioInvestmentListView(ListAPIView):
     serializer_class = InvestmentSerializer
 
     def get_queryset(self):
-        return Investment.objects.filter(username=self.kwargs['username'])
+        return Investment.objects.filter(username=self.request.user.username)
 
 
 class AuthenticationView(APIView):

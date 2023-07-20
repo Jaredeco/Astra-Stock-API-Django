@@ -13,6 +13,9 @@ class ViewsTest(TestCase):
         # Create a user for testing
         self.user = User.objects.create_user(username='testuser', password='testpassword')
 
+        # Create a admin user for testing
+        self.admin_user = User.objects.create_user(username='adminuser', password='adminpassword', is_staff=True)
+
         # Create a user for testing
         User.objects.create_user(username='testuser2', password='testpassword')
 
@@ -30,7 +33,7 @@ class ViewsTest(TestCase):
         # Create second bond for testing
         self.bond1 = Bond.objects.create(
             name='Test Bond 2',
-            isin='TEST12345679',
+            isin='CZ0003551251',
             value=2000,
             interest_rate=0.03,
             purchase_date='2023-02-02',
@@ -66,13 +69,58 @@ class ViewsTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('username, password', response.data)
 
+    def test_non_admin_user_bond_crud_view(self):
+        # Authenticate the non-admin user
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+        # Test the BondCreateView with valid data
+        data = {
+            'name': 'New Bond',
+            'isin': 'CZ0003551251',
+            'value': 2000,
+            'interest_rate': 0.06,
+            'purchase_date': '2023-02-01',
+            'expiration_date': '2025-02-01',
+            'interest_payment_frequency': 'Semi-Annual',
+        }
+        response = self.client.post('/api/v1/bond/', data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data['detail'], 'You do not have permission to perform this action.')
+
+        # Test the BondCRUDView (Retrieve)
+        response = self.client.get(f'/api/v1/bond/{self.bond.isin}/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Test the BondCRUDView (Update)
+        data = {
+            'name': 'Updated Bond',
+            'value': 1500,
+        }
+        response = self.client.put(f'/api/v1/bond/{self.bond.isin}/', data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data['detail'], 'You do not have permission to perform this action.')
+
+        data = {
+            'name': 'Patch Bond',
+            'value': 1300,
+        }
+        response = self.client.patch(f'/api/v1/bond/{self.bond.isin}/', data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data['detail'], 'You do not have permission to perform this action.')
+
+        # Test the BondCRUDView (Delete)
+        response = self.client.delete(f'/api/v1/bond/{self.bond.isin}/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data['detail'], 'You do not have permission to perform this action.')
+
     def test_analyze_portfolio_view(self):
         # Authenticate the user
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
         # Test the AnalyzePortfolioView
-        response = self.client.get(f'/api/v1/portfolio/{self.user.username}/')
+        response = self.client.get(f'/api/v1/portfolio/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('average_interest_rate', response.data)
         self.assertIn('soon_expires', response.data)
@@ -145,12 +193,12 @@ class ViewsTest(TestCase):
     def test_bond_crud_view(self):
         # Authenticate the user
         self.client = APIClient()
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin_user)
 
         # Test the BondCreateView with valid data
         data = {
             'name': 'New Bond',
-            'isin': 'NEW12345678',
+            'isin': 'CZ0001006167',
             'value': 2000,
             'interest_rate': 0.06,
             'purchase_date': '2023-02-01',
@@ -162,7 +210,6 @@ class ViewsTest(TestCase):
         self.assertIn('name', response.data)
         self.assertIn('isin', response.data)
         self.assertIn('value', response.data)
-        # Add assertions for other fields if needed
 
         # Test the BondCRUDView (Retrieve)
         response = self.client.get(f'/api/v1/bond/{self.bond.isin}/')
@@ -202,7 +249,7 @@ class ViewsTest(TestCase):
         client.force_authenticate(user=self.user)
 
         # Test the UserPortfolioBondListView
-        response = client.get(f'/api/v1/portfolio/bonds/{self.user.username}/')
+        response = client.get(f'/api/v1/portfolio/bonds/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)  # Ensure we get both bonds in the user's portfolio
         self.assertIn(self.bond.isin, [item['isin'] for item in response.data])
@@ -214,8 +261,41 @@ class ViewsTest(TestCase):
         client.force_authenticate(user=self.user)
 
         # Test the UserPortfolioInvestmentListView
-        response = client.get(f'/api/v1/portfolio/investments/{self.user.username}/')
+        response = client.get(f'/api/v1/portfolio/investments/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)  # Ensure we get both investments in the user's portfolio
         self.assertIn(self.investment.id, [item['id'] for item in response.data])
         self.assertIn(self.investment1.id, [item['id'] for item in response.data])
+
+    def test_investment_crud_view(self):
+        # Authenticate the user
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+        # Test the InvestmentCRUDView (Retrieve)
+        response = self.client.get(f'/api/v1/investment/{self.investment.id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['username'], self.user.username)
+
+        # Test the InvestmentCRUDView (Update)
+        data = {
+            'volume': 10,
+        }
+        response = self.client.put(f'/api/v1/investment/{self.investment.id}', data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['volume'], 10)
+
+        data = {
+            'volume': 8,
+        }
+        response = self.client.patch(f'/api/v1/investment/{self.investment.id}', data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['volume'], 8)
+
+        # Test the InvestmentCRUDView (Delete)
+        response = self.client.delete(f'/api/v1/investment/{self.investment.id}')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Verify the Investment is deleted
+        response = self.client.get(f'/api/v1/investment/{self.investment.id}')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

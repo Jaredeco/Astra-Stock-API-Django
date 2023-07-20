@@ -1,40 +1,31 @@
 # Django Rest Framework Bond Service API
 
-This is a Django Rest Framework API for managing bonds and investments. It allows authenticated users to perform CRUD operations on bonds and investments, as well as analyze their portfolio. Users can register and obtain a token for authentication, which is required for all API endpoints.
+The Bond Service API is a secure and efficient financial tool that enables administrators to manage bonds through create, retrieve, update, and delete functionalities. Regular users can access their investment portfolio, create new investments, purchase bonds, and manage their holdings. The API also includes robust ISIN validation to ensure the accuracy and authenticity of bond data, enhancing data integrity and providing a comprehensive solution for managing financial assets.
 
 ## API Structure
 
-In this RESTful API, endpoints (URLs) define the structure of the API and how end users access data from our application using the HTTP methods - GET, POST, PUT, DELETE. Endpoints are logically organized around different resources.
+The Django Rest Framework Bond Service API follows the principles of a RESTful API, where endpoints (URLs) define the structure and access points of the API. The endpoints are logically organized around collections and elements, which represent resources.
 
-### Bonds
+The API has the following endpoints:
 
-- `GET /api/v1/bonds/`: List all bonds.
-- `POST /api/v1/bond/`: Create a new bond.
-- `GET /api/v1/bond/<isin>/`: Retrieve a specific bond.
-- `PUT /api/v1/bond/<isin>/`: Update a specific bond.
-- `DELETE /api/v1/bond/<isin>/`: Delete a specific bond.
+- **Bonds Endpoints:**
+  - `GET /bonds/`: Retrieve a list of all bonds. (No authentication required)
+  - `POST /bond/`: Create a new bond. (Admin privileges required)
+  - `GET /bond/<isin>/`: Retrieve a specific bond by its ISIN. (No authentication required)
+  - `PUT /bond/<isin>/`: Update a specific bond by its ISIN. (Admin privileges required)
+  - `DELETE /bond/<isin>/`: Delete a specific bond by its ISIN. (Admin privileges required)
 
-### Investments
+- **Users Endpoint:**
+  - `GET /users/`: Retrieve a list of all users. (Admin privileges required)
 
-- `GET /api/v1/investments/`: List all investments.
-- `POST /api/v1/investment/`: Create a new investment.
-- `GET /api/v1/investment/<pk>/`: Retrieve a specific investment.
-- `PUT /api/v1/investment/<pk>/`: Update a specific investment.
-- `DELETE /api/v1/investment/<pk>/`: Delete a specific investment.
+- **Portfolio Analysis Endpoint:**
+  - `GET /portfolio/analyze/`: Analyze the investment portfolio of the authenticated user. (User authentication required)
 
-### Portfolio Analysis
-
-- `GET /api/v1/portfolio/<username>/`: Analyze the user's portfolio.
-
-### User Portfolio
-
-- `GET /api/v1/portfolio/bonds/<username>/`: List all bonds in the user's portfolio.
-- `GET /api/v1/portfolio/investments/<username>/`: List all investments in the user's portfolio.
-
-### Authentication and User Management
-
-- `POST /api/v1/authenticate/`: Authenticate the user or register a new user.
-- `GET /api/v1/users/`: List all users. (Admin-only endpoint)
+- **Investments Endpoints:**
+  - `POST /investment/`: Purchase a bond by providing the username, bond ISIN, and volume. (User authentication required)
+  - `GET /investment/<id>/`: Retrieve a specific investment by its ID. (User authentication required)
+  - `PUT /investment/<id>/`: Update a specific investment by its ID. (User authentication required)
+  - `DELETE /investment/<id>/`: Delete a specific investment by its ID. (User authentication required)
 
 Users can authenticate using the `/api/v1/authenticate/` endpoint, which registers the user if no account exists or authenticates if the user already exists. Once authenticated, users can obtain a token for authentication, which is required for all API endpoints.
 
@@ -122,44 +113,6 @@ The API will be accessible at `http://localhost:8000/`.
 
 ### API Endpoints
 
-#### Authentication
-
-##### Register a new user
-
-Endpoint: `POST /api/v1/auth/register/`
-
-Creates a new user and returns the user details.
-
-Request:
-
-```
-http POST http://localhost:8000/api/v1/auth/register/ email="email@email.com" username="USERNAME" password1="PASSWORD" password2="PASSWORD"
-```
-
-##### Obtain an access token
-
-Endpoint: `POST /api/v1/auth/token/`
-
-Obtains an access token for an existing user. The access token is required for authentication.
-
-Request:
-
-```
-http POST http://localhost:8000/api/v1/auth/token/ username="username" password="password"
-```
-
-##### Refresh an access token
-
-Endpoint: `POST /api/v1/auth/token/refresh/`
-
-Refreshes an access token using a refresh token.
-
-Request:
-
-```
-http POST http://localhost:8000/api/v1/auth/token/refresh/ refresh="REFRESH_TOKEN"
-```
-
 #### Bonds
 
 ##### List all bonds
@@ -171,8 +124,10 @@ Returns a list of all bonds in the system.
 Request:
 
 ```
-http GET http://localhost:8000/api/v1/bonds/ "Authorization: Token {YOUR_TOKEN}"
+http GET http://localhost:8000/api/v1/bonds/
 ```
+
+Permissions: None (public access)
 
 ##### Create a new bond
 
@@ -185,6 +140,8 @@ Request:
 ```
 http POST http://localhost:8000/api/v1/bond/ "Authorization: Token {YOUR_TOKEN}" name="Test Bond" isin="TEST12345678" value=1000 interest_rate=0.05 purchase_date="2023-01-01" expiration_date="2024-01-01" interest_payment_frequency="Annual"
 ```
+
+Permissions: Admin privileges required
 
 ##### Retrieve, update, and delete a bond
 
@@ -200,6 +157,8 @@ http PUT http://localhost:8000/api/v1/bond/<isin>/ "Authorization: Token {YOUR_T
 http DELETE http://localhost:8000/api/v1/bond/<isin>/ "Authorization: Token {YOUR_TOKEN}"
 ```
 
+Permissions: Admin privileges required
+
 #### Investments
 
 ##### List all investments
@@ -214,6 +173,8 @@ Request:
 http GET http://localhost:8000/api/v1/investments/ "Authorization: Token {YOUR_TOKEN}"
 ```
 
+Permissions: None (public access)
+
 ##### Create a new investment
 
 Endpoint: `POST /api/v1/investment/`
@@ -225,6 +186,8 @@ Request:
 ```
 http POST http://localhost:8000/api/v1/investment/ "Authorization: Token {YOUR_TOKEN}" username="username" bond_isin="TEST12345678" volume=10
 ```
+
+Permissions: User authentication required
 
 ##### Retrieve, update, and delete an investment
 
@@ -240,41 +203,56 @@ http PUT http://localhost:8000/api/v1/investment/<pk>/ "Authorization: Token {YO
 http DELETE http://localhost:8000/api/v1/investment/<pk>/ "Authorization: Token {YOUR_TOKEN}"
 ```
 
+Permissions: User authentication required
+
 #### Portfolio Analysis
 
-Endpoint: `GET /api/v1/portfolio/<username>/`
+Endpoint: `GET /api/v1/portfolio/analyze/`
 
-Analyzes the user's portfolio and returns various metrics, including the average interest rate, soon-to-expire bonds, portfolio balance, and future portfolio balance.
+Analyzes the authenticated user's portfolio and returns various metrics, including the average interest rate, soon-to-expire bonds, portfolio balance, and future portfolio balance.
 
 Request:
 
 ```
-http GET http://localhost:8000/api/v1/portfolio/<username>/ "Authorization: Token {YOUR_TOKEN}"
+http GET http://localhost:8000/api/v1/portfolio/analyze/ "Authorization: Token {YOUR_TOKEN}"
 ```
+
+Permissions: User authentication required
 
 #### User Portfolio
 
-Endpoint: `GET /api/v1/portfolio/bonds/<username>/`
+Endpoint: `GET /api/v1/portfolio/bonds/`
 
-Returns a list of all bonds in the user's portfolio.
-
-Request:
-
-```
-http GET http://localhost:8000/api/v1/portfolio/bonds/<username>/ "Authorization: Token {YOUR_TOKEN}"
-```
-
-Endpoint: `GET /api/v1/portfolio
-
-/investments/<username>/`
-
-Returns a list of all investments in the user's portfolio.
+Returns a list of all bonds in the authenticated user's portfolio.
 
 Request:
 
 ```
-http GET http://localhost:8000/api/v1/portfolio/investments/<username>/ "Authorization: Token {YOUR_TOKEN}"
+http GET http://localhost:8000/api/v1/portfolio/bonds/ "Authorization: Token {YOUR_TOKEN}"
 ```
+
+Permissions: User authentication required
+
+Endpoint: `GET /api/v1/portfolio/investments/`
+
+Returns a list of all investments in the authenticated user's portfolio.
+
+Request:
+
+```
+http GET http://localhost:8000/api/v1/portfolio/investments/ "Authorization: Token {YOUR_TOKEN}"
+```
+
+Permissions: User authentication required
+
+### ISIN Validation
+The application validates the International Securities Identification Number (ISIN) before creating a new bond. The ISIN validation ensures that the entered ISIN exists and is valid according to the Czech Central Depository for Securities (CDCP) database.
+
+If the provided ISIN is invalid or not found in the database, the system will raise a validation error and prevent the bond from being created.
+
+The validation process sends a GET request to the CDCP API https://www.cdcp.cz/isbpublicjson/api/VydaneISINy with the provided ISIN as a parameter. If the CDCP API returns a status code other than 200, indicating an error, the validation fails, and the bond creation is halted.
+
+Please note that the ISIN validation requires an active internet connection to access the CDCP API. The validation process helps to ensure data integrity and accuracy within the application.
 
 ### Additional Notes
 

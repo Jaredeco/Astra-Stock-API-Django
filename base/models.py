@@ -1,11 +1,20 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models import Avg
+from django.core.exceptions import ValidationError
+import requests
+
+
+def _validate_isin(isin):
+    url = "https://www.cdcp.cz/isbpublicjson/api/VydaneISINy"
+    params = {"isin": isin}
+    response = requests.get(url, params=params)
+    if response.status_code != 200:
+        raise ValidationError(response.json()['message'])
 
 
 class Bond(models.Model):
     name = models.CharField(max_length=100, null=True)
-    isin = models.CharField(max_length=12, unique=True, null=True)
+    isin = models.CharField(max_length=12, unique=True, null=True, validators=[_validate_isin])
     value = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     interest_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     purchase_date = models.DateTimeField(auto_now_add=True, null=True)
