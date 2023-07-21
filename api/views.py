@@ -49,29 +49,56 @@ class AnalyzePortfolioView(APIView):
         investments = Investment.objects.filter(username=request.user.username)
         if len(investments) == 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+        today = timezone.now()
         average_interest_rate = investments.aggregate(avg=Avg('bond_isin__interest_rate'))['avg']
-        soon_expires = investments.order_by('bond_isin__expiration_date').first()
+        not_expired_bonds = investments.filter(bond_isin__expiration_date__gte=today)
+        soon_expires = not_expired_bonds.order_by('bond_isin__expiration_date').first()
         portfolio_balance = 0
         future_portfolio_balance = 0
-        today = timezone.now()
+
+        # different possible solution, but current seems more intuitive and clear for me
+        # from django.db.models import F, Sum, Case, When
+        # portfolio_balance = investments.aggregate(
+        #     balance=Sum(
+        #         F('volume') * F('bond_isin__value')
+        #     )
+        # )['balance'] or 0
+        #
+        # future_portfolio_balance = investments.aggregate(
+        #     future_balance=Sum(
+        #         Case(
+        #             When(bond_isin__expiration_date__lt=today, then=F('volume') * F('bond_isin__value')),
+        #             default= F('volume') * (F('bond_isin__value') +
+        #                                    (F('bond_isin__value') * F('bond_isin__interest_rate')))
+        #             ,
+        #         )
+        #     )
+        # )['future_balance'] or 0
+
         for investment in investments:
             portfolio_balance += investment.volume * investment.bond_isin.value
             if investment.bond_isin.expiration_date >= today:
-                future_portfolio_balance += investment.volume * (investment.bond_isin.value + (investment.bond_isin.
-                                                                                               value * investment.bond_isin.interest_rate))
+                current_value = investment.volume * investment.bond_isin.value
+                expected_return_one_year = investment.volume * investment.bond_isin.value * investment.bond_isin.interest_rate
+                future_portfolio_balance += current_value + expected_return_one_year
             else:
                 future_portfolio_balance += investment.volume * investment.bond_isin.value
 
         data = {
             'average_interest_rate': average_interest_rate,
-            'soon_expires': {
-                'bond_name': soon_expires.bond_isin.name,
-                'bond_isin': soon_expires.bond_isin.isin,
-                'bond_expiration_date': soon_expires.bond_isin.expiration_date,
-            },
+            'soon_expires': 'All bods in your portfolio have already expired!',
             'portfolio_balance': portfolio_balance,
             'future_portfolio_balance': future_portfolio_balance,
         }
+
+        if soon_expires is not None:
+            data['soon_expires'] = {
+                'bond_name': soon_expires.bond_isin.name,
+                'bond_isin': soon_expires.bond_isin.isin,
+                'bond_expiration_date': soon_expires.bond_isin.expiration_date,
+            }
+
         return Response(data, status=status.HTTP_200_OK)
 
 

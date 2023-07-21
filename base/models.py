@@ -12,7 +12,7 @@ def _validate_isin(isin):
         raise ValidationError(response.json()['message'])
 
 
-# Set null=True to make sure there are no db conflicts
+# Set null=True to make sure there are no db conflicts, remove null=True if database is clean
 class Bond(models.Model):
     name = models.CharField(max_length=100, null=True)
     isin = models.CharField(max_length=12, unique=True, null=True, validators=[_validate_isin])
