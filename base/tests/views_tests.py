@@ -273,7 +273,7 @@ class ViewsTest(TestCase):
         self.client.force_authenticate(user=self.user)
 
         # Test the InvestmentCRUDView (Retrieve)
-        response = self.client.get(f'/api/v1/investment/{self.investment.id}')
+        response = self.client.get(f'/api/v1/investment/{self.investment.id}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['username'], self.user.username)
 
@@ -281,21 +281,21 @@ class ViewsTest(TestCase):
         data = {
             'volume': 10,
         }
-        response = self.client.put(f'/api/v1/investment/{self.investment.id}', data)
+        response = self.client.put(f'/api/v1/investment/{self.investment.id}/', data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['volume'], 10)
 
         data = {
             'volume': 8,
         }
-        response = self.client.patch(f'/api/v1/investment/{self.investment.id}', data)
+        response = self.client.patch(f'/api/v1/investment/{self.investment.id}/', data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['volume'], 8)
 
         # Test the InvestmentCRUDView (Delete)
-        response = self.client.delete(f'/api/v1/investment/{self.investment.id}')
+        response = self.client.delete(f'/api/v1/investment/{self.investment.id}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         # Verify the Investment is deleted
-        response = self.client.get(f'/api/v1/investment/{self.investment.id}')
+        response = self.client.get(f'/api/v1/investment/{self.investment.id}/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

