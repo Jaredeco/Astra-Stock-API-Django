@@ -9,7 +9,8 @@ class BondModelTest(TestCase):
     def setUp(self):
         # Create a test user
         self.user = User.objects.create_user(username='testuser', password='testpassword')
-
+    
+    #optional test, Django already handles this
     def test_create_bond(self):
         # Create a new Bond
         bond = Bond.objects.create(
@@ -29,7 +30,7 @@ class BondModelTest(TestCase):
         self.assertEqual(bond.interest_rate, 0.05)
         self.assertEqual(bond.expiration_date, '2024-01-01')
         self.assertEqual(bond.interest_payment_frequency, 'Annual')
-
+    
     def test_bond_str_representation(self):
         # Create a new Bond
         bond = Bond.objects.create(
@@ -96,6 +97,7 @@ class InvestmentModelTest(TestCase):
             interest_payment_frequency='Annual',
         )
 
+    #optional test, Django already handles this
     def test_create_investment(self):
         # Create a new Investment
         investment = Investment.objects.create(
